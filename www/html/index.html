@@ -1,0 +1,66 @@
+<HTML>
+<HEAD>
+    <TITLE>penplot1</TITLE>
+    <LINK REL="STYLESHEET" TYPE="text/css" HREF="cups-printable.css">
+</HEAD>
+
+<BODY>
+
+
+<h1 class="title">penplot1</h1>
+
+<p>This is the Digital LVP-16 pen plotter.  It's essentially the same as the classic HP7475a model, and was introduced in 1983 selling for US$1895.
+</p>
+
+<p>The plotter uses up to 6 pens.  There's a selection of colors of original pens, not all of them draw very well.  Additionally there are Sharpie adapters if you want to use your own pens.
+</p>
+
+<h2>Installing as a Printer</h2>
+
+You should be able to discover the plotter on the network.
+Alternatively, this link will add it:
+<a href="ipp://penplot1.local:631/">ipp://penplot1.local:631/</a>
+
+<h2>Setting Up the Paper</h2>
+
+<p>(TODO) - Nothing here yet
+</p>
+
+<h2>Printing</h2>
+<p>
+You can print any document from Windows or MacOS.  Be careful: complex documents will
+take a very long time to print.  Please be considerate!  Start with <b>simple line-drawings</b>,
+and then try small amounts of shading or text.
+</p>
+
+<p>
+You can also print directly using the printer's raw &quot;HPGL&quot; format.
+For example you can export Inkscape drawings in HPGL.  There are also HPGL connectors for Processing, D3.js and so on.
+<br>To print a raw HPGL file (usually ".plt" file extension) from a Linux or MacOS command-line:, first check that you have installed the printer named `penplot1_local`:
+<pre class="command">
+lpstat -p -d
+</pre>
+Then, to print an HPGL file named 'FILENAME':
+<pre class="command">
+lp -d penplot1_local -o raw FILENAME
+</pre>
+
+</p>
+<h2>Additional Links and Resources</h1>
+<p>
+<ul>
+<li><a href="https://archive.org/details/HP7475AOperationManual">Operation Manual</a>
+<li><a href="https://archive.org/details/HP7475AInterfacingandProgrammingManual/page/n1">Interfacing and Programming Manual</a>
+<li><a href="https://github.com/beardicus/awesome-plotters#hpgl">A nice list of HPGL tools</a>
+<li><a href="https://twitter.com/search?q=%23plottertwitter">#plottertwitter</a>
+<li><a href="https://drawingbots.net/">drawingbots.net</a>
+</ul>
+</p>
+
+<h2>Printer Settings</h2>
+<p>You shouldn't need to change the printer settings.  The correct baud rate is 9600, per this picture:
+</p>
+<img src="baud.png">
+
+</BODY>
+</HTML> 

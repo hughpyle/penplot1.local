@@ -1,0 +1,44 @@
+#!/bin/bash
+# Print PDF or "raw HPGL" to an HPGL plotter connected via serial port.
+
+# To use this:
+# python -m ippserver --port 1631 run print-hpgl
+
+LOGFILE=print-hpgl.log
+
+# The output device is a Teensy, appears as /dev/ttyACM0
+DEVICE=out.dat
+# /dev/ttyACM0
+
+# The file to be printed will be passed on stdin.  We save it into
+# the spool directory, then look at the file type to determine handling,
+# then send it to the printer.  The original file is retained
+# in the spool directory but can be deleted at any time.
+SPOOL_DIR=/var/spool/hpgl
+mkdir -p ${SPOOL_DIR}
+
+SPOOL_FILE=$(mktemp -p ${SPOOL_DIR})
+cat > ${SPOOL_FILE}
+
+# The print server tells clients that we want only PDF or HPGL (.plt)
+# data formats.  But there's a chance we also get PostScript or other
+# formats depending on the client.  So here, try best-effort identify
+# what sort of file we have, and convert them all into HPGL.
+
+# test is this pdf or not by looking at the file header
+#file ${SPOOL_FILE} | grep PDF
+#file ${SPOOL_FILE} | grep PostScript
+
+if file ${SPOOL_FILE} | grep -q "PDF"; then
+	echo "${SPOOL_FILE} is a pdf" >> ${LOGFILE}
+	pstoedit -f hpgl ${SPOOL_FILE} > ${DEVICE} 2>>${LOGFILE}
+elif file ${SPOOL_FILE} | grep -q "PostScript"; then
+    echo "${SPOOL_FILE} is postscript" >> ${LOGFILE}
+    pstoedit -f hpgl ${SPOOL_FILE} > ${DEVICE} 2>>${LOGFILE}
+elif head -n 1 ${SPOOL_FILE} | grep -q "^IN;"; then
+    echo "${SPOOL_FILE} is HPGL" >> ${LOGFILE}
+    cat ${SPOOL_FILE} > ${DEVICE}
+else
+    echo "Not a file we can handle"
+    exit 1
+fi
