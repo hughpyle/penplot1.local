@@ -13,7 +13,7 @@
     <txt-record>note=Digital LVP-16 (HPGL) pen-plotter</txt-record>
     <txt-record>product=(Digital LVP-16)</txt-record>
     <txt-record>printer-state=3</txt-record>
-    <txt-record>printer-type=0x3056</txt-record>
+    <txt-record>printer-type=0xB00E</txt-record><!-- https://www.cups.org/doc/spec-ipp.html -->
     <txt-record>Transparent=T</txt-record>
     <txt-record>Binary=T</txt-record>
     <txt-record>Copies=T</txt-record>
