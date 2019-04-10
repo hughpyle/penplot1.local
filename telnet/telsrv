@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+
+# Telnet server for interactive connection to the plotter
+# See: https://github.com/jquast/telnetlib3
+
+import click
+import asyncio
+import telnetlib3
+
+
+@asyncio.coroutine
+def shell(reader, writer):
+    print("Connected")
+    writer.write('\r\nType HPGL code for the plotter.\r\n')
+    running = True
+    while running:
+        inp = yield from reader.read(1)
+        if inp == "":
+            # end of input
+            break
+        if ord(inp) in [0x03, 0x04]:
+            # Ctrl+X, Ctrl+D
+            break
+        writer.echo(inp)
+        if inp == '\r':
+            writer.echo('\n')
+        yield from writer.drain()
+    writer.close()
+
+
+@click.command()
+@click.option("--port", default=1234)
+def main(port):
+    print("Server on port {}".format(port))
+    loop = asyncio.get_event_loop()
+    coro = telnetlib3.create_server(port=port, shell=shell)
+    server = loop.run_until_complete(coro)
+    loop.run_until_complete(server.wait_closed())
+
+
+if __name__ == "__main__":
+    main()
