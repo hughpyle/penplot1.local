@@ -8,7 +8,7 @@ PPD=${HOME}/hpgl/data/lvp16.ppd
 
 # Run the IPP server
 PORT=631
-export IPP_DATA_DIR=/home/pi/data/
+export IPP_DATA_DIR=/home/pi/hpgl/data/
 export IPP_PRINTER_NAME='penplot1.local'
 export IPP_PRINTER_INFO='LVP16 HPGL pen plotter (HP7475a-compatible)'
 export IPP_PRINTER_MAKE_AND_MODEL='Digital LVP-16'
