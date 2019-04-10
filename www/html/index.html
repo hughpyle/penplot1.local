@@ -3,10 +3,7 @@
     <TITLE>penplot1</TITLE>
     <LINK REL="STYLESHEET" TYPE="text/css" HREF="cups-printable.css">
 </HEAD>
-
 <BODY>
-
-
 <h1 class="title">penplot1</h1>
 
 <p>This is the Digital LVP-16 pen plotter.  It's essentially the same as the classic HP7475a model, and was introduced in 1983 selling for US$1895.
@@ -49,11 +46,11 @@ lp -d penplot1_local -o raw FILENAME
 <h2>Additional Links and Resources</h1>
 <p>
 <ul>
-<li><a href="https://archive.org/details/HP7475AOperationManual">Operation Manual</a>
-<li><a href="https://archive.org/details/HP7475AInterfacingandProgrammingManual/page/n1">Interfacing and Programming Manual</a>
-<li><a href="https://github.com/beardicus/awesome-plotters#hpgl">A nice list of HPGL tools</a>
-<li><a href="https://twitter.com/search?q=%23plottertwitter">#plottertwitter</a>
-<li><a href="https://drawingbots.net/">drawingbots.net</a>
+        <li><a href="https://archive.org/details/HP7475AOperationManual">Operation Manual</a></li>
+        <li><a href="https://archive.org/details/HP7475AInterfacingandProgrammingManual/page/n1">Interfacing and Programming Manual</a></li>
+        <li><a href="https://github.com/beardicus/awesome-plotters#hpgl">A nice list of HPGL tools</a></li>
+        <li><a href="https://twitter.com/search?q=%23plottertwitter">#plottertwitter</a></li>
+        <li><a href="https://drawingbots.net/">drawingbots.net</a></li>
 </ul>
 </p>
 
@@ -61,6 +58,17 @@ lp -d penplot1_local -o raw FILENAME
 <p>You shouldn't need to change the printer settings.  The correct baud rate is 9600, per this picture:
 </p>
 <img src="baud.png">
+
+<h2>TODO</h2>
+<p>
+<ul>
+        <li>Testing</li>
+        <li>Finish the 'setting up the paper'</li>
+        <li>Some pictures</li>
+        <li>Some way to plot interactively,not just batch print services.  Maybe just a socket that listens when the ipp job isn't busy printing?</li>
+        <li>Multicolor LED light-bar driven by plot activity</li>
+</ul>
+</p>
 
 </BODY>
 </HTML> 
