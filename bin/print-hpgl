@@ -7,8 +7,7 @@
 LOGFILE=print-hpgl.log
 
 # The output device is a Teensy, appears as /dev/ttyACM0
-DEVICE=out.dat
-# /dev/ttyACM0
+DEVICE=/dev/ttyACM0
 
 # The file to be printed will be passed on stdin.  We save it into
 # the spool directory, then look at the file type to determine handling,

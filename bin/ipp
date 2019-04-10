@@ -4,8 +4,9 @@
 . ${HOME}/.profile
 
 # Run the IPP server
+PORT=1631
 export IPP_DATA_DIR=/home/pi/data/
 export IPP_PRINTER_NAME='penplot1.local'
 export IPP_PRINTER_INFO='LVP16 HPGL pen plotter (HP7475a-compatible)'
 export IPP_PRINTER_MAKE_AND_MODEL='Digital LVP-16'
-authbind --deep python -m ippserver --host penplot1.local --port 631 run /home/pi/bin/print-hpgl --ppd /home/pi/data/lvp16.ppd
+authbind --deep python -m ippserver --host penplot1.local --port $PORT run /home/pi/bin/print-hpgl --ppd /home/pi/data/lvp16.ppd  >>ipp.log 2>&1
