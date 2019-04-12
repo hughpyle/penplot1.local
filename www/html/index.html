@@ -52,18 +52,22 @@ and then try small amounts of shading or text.
 </p>
 
 <p>
-You can also print directly using the printer's raw &quot;HPGL&quot; format.
-For example you can export Inkscape drawings in HPGL.  There are also HPGL connectors for Processing, D3.js and so on.
+You can also print directly using SVG or the printer's raw &quot;HPGL&quot; format.
+For example you can export Inkscape drawings in HPGL or SVG.  There are also HPGL connectors for Processing, D3.js and so on.
 <br>To print a raw HPGL file (usually ".plt" file extension) from a Linux or MacOS command-line:, first check that you have installed the printer named `penplot1_local`:
 <pre class="command">
 lpstat -p -d
 </pre>
-Then, to print an HPGL file named 'FILENAME':
+Then, to print an HPGL file named 'FILENAME.plt':
 <pre class="command">
-lp -d penplot1_local -o raw FILENAME
+lp -d penplot1_local -o raw FILENAME.plt
 </pre>
-
+Or, to print an SVG file named 'FILENAME.svg':
+<pre class="command">
+lp -d penplot1_local -o raw FILENAME.svg
+</pre>
 </p>
+
 <h2>Additional Links and Resources</h1>
 <p>
 <ul>
