@@ -9,6 +9,13 @@ LOGFILE=print-hpgl.log
 # The output device is a Teensy, appears as /dev/ttyACM0
 DEVICE=/dev/ttyACM0
 
+# Initialize the device before each print job
+# see https://archive.org/details/HP7475AInterfacingandProgrammingManual/page/n145
+# see https://archive.org/details/HP7475AInterfacingandProgrammingManual/page/n199
+echo "\033.Y" > ${DEVICE}          # turn the plotter on
+echo "\033.I81;;17:" > ${DEVICE}   # set Xon threshold and trigger character
+echo "\033.N;19:" > ${DEVICE}      # set Xoff trigger character
+
 # The file to be printed will be passed on stdin.  We save it into
 # the spool directory, then look at the file type to determine handling,
 # then send it to the printer.  The original file is retained
@@ -41,3 +48,18 @@ else
     echo "Not a file we can handle"
     exit 1
 fi
+
+# Ask the device if any errors occurred (and clear the error flag)
+echo "\033.E" > ${DEVICE}
+# The response should be a decimal number (the error code)
+# followed by the output terminator (carriage return)
+# 0 = no error
+# 10 = output instruction received while another instruction was executing
+# 11 = invalid device control instruction (escape sequence)
+# 12 = invalid parameter in a device control instruction (escape sequence)
+# 13 = parameter out of range
+# 14 = too many parameters received
+# 15 = framing error, parity error, or overrun error
+# 16 = input buffer overflowed
+read -t 2 -d "\r" result < ${DEVICE}
+echo "Result code: " $result >>${LOGFILE}
