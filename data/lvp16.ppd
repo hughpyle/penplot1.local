@@ -22,8 +22,8 @@
 *Throughput: "1"
 *Password: "0"
 
-* CUPS conversions for HPGL and PDF
+* CUPS conversions for HPGL, SVG and PDF
 *cupsFilter2: "application/vnd.hp-HPGL application/vnd.cups-raw 0 -"
+*cupsFilter2: "image/svg+xml application/vnd.cups-raw 0 -"
 *cupsFilter2: "application/pdf application/vnd.cups-pdf 0 pdftopdf"
-*cupsFilter2: "application/postscript application/vnd.cups-pdf 50 pstopdf"
 

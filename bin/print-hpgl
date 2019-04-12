@@ -26,7 +26,7 @@ mkdir -p ${SPOOL_DIR}
 SPOOL_FILE=$(mktemp -p ${SPOOL_DIR})
 cat > ${SPOOL_FILE}
 
-# The print server tells clients that we want only PDF or HPGL (.plt)
+# The print server tells clients that we want only PDF, SVG or HPGL
 # data formats.  But there's a chance we also get PostScript or other
 # formats depending on the client.  So here, try best-effort identify
 # what sort of file we have, and convert them all into HPGL.
@@ -37,10 +37,15 @@ cat > ${SPOOL_FILE}
 
 if file ${SPOOL_FILE} | grep -q "PDF"; then
 	echo "${SPOOL_FILE} is a pdf" >> ${LOGFILE}
-	pstoedit -f hpgl ${SPOOL_FILE} > ${DEVICE} 2>>${LOGFILE}
+	pstoedit -f plot-hpgl -dt -pti ${SPOOL_FILE} ${DEVICE} >>${LOGFILE} 2>&1
 elif file ${SPOOL_FILE} | grep -q "PostScript"; then
     echo "${SPOOL_FILE} is postscript" >> ${LOGFILE}
-    pstoedit -f hpgl ${SPOOL_FILE} > ${DEVICE} 2>>${LOGFILE}
+    ps2pdf ${SPOOL_FILE} ${SPOOL_FILE}.pdf >>${LOGFILE} 2>&1
+    pstoedit -f plot-hpgl -dt -pti ${SPOOL_FILE}.pdf ${DEVICE} >>${LOGFILE} 2>&1
+elif file ${SPOOL_FILE} | grep -q "SVG"; then
+    echo "${SPOOL_FILE} is SVG" >> ${LOGFILE}
+    rsvg-convert -f pdf -o ${SPOOL_FILE}.pdf ${SPOOL_FILE} >>${LOGFILE} 2>&1
+    pstoedit -f plot-hpgl -dt -pti ${SPOOL_FILE}.pdf ${DEVICE} >>${LOGFILE} 2>&1
 elif head -n 1 ${SPOOL_FILE} | grep -q "^IN;"; then
     echo "${SPOOL_FILE} is HPGL" >> ${LOGFILE}
     cat ${SPOOL_FILE} > ${DEVICE}
