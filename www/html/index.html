@@ -16,11 +16,32 @@
 
 You should be able to discover the plotter on the network.
 Alternatively, this link will add it:
-<a href="ipp://penplot1.local:631/">ipp://penplot1.local:631/</a>
+<a href="ipp://penplot1.local/">ipp://penplot1.local/</a>
 
 <h2>Setting Up the Paper</h2>
 
-<p>(TODO) - Nothing here yet
+<p>Check that the paper-size DIP switch at the rear of the printer is set appropriately,
+        to "A4"/Letter or "B4"/B size.
+
+</p>
+<img src="papersize.png">
+<p>Lift the paper-release lever.
+Place a sheet with its far edge just behind the roller, by the mark.
+Lower the paper-release lever.
+</p>
+<p>Then check the P1 and P2 "scaling points".  Think of these as the zero-point (P1),
+which is at the bottom left of a landscape-oriented page, and the opposite corner (P2),
+which is at the top right of a landcape-oriented page.
+<p>
+<p>Press the <b>P1</b> button, and the pen and paper will move to the P1 position
+(pen to the far left, and near the "bottom" edge of the page, when looking at the
+page as a landscape).  Then press the <b>P2</b> button, and the pen and paper will move
+to the opposite corner.  Check that the paper is still held correctly at both these
+points.
+</p>
+<p><a href="https://archive.org/details/HP7475AInterfacingandProgrammingManual/page/n35"><img src="p1p2.png" style="width:35%"></a></p>
+
+<p>Then you're ready to print.
 </p>
 
 <h2>Printing</h2>
@@ -55,7 +76,7 @@ lp -d penplot1_local -o raw FILENAME
 </p>
 
 <h2>Printer Settings</h2>
-<p>You shouldn't need to change the printer settings.  The correct baud rate is 9600, per this picture:
+<p>You shouldn't need to change the other settings.  The correct baud rate is 9600, per this picture:
 </p>
 <img src="baud.png">
 
@@ -63,7 +84,6 @@ lp -d penplot1_local -o raw FILENAME
 <p>
 <ul>
         <li>Testing</li>
-        <li>Finish the 'setting up the paper'</li>
         <li>Some pictures</li>
         <li>Some way to plot interactively,not just batch print services.  Maybe just a socket that listens when the ipp job isn't busy printing?</li>
         <li>Multicolor LED light-bar driven by plot activity</li>
@@ -71,4 +91,4 @@ lp -d penplot1_local -o raw FILENAME
 </p>
 
 </BODY>
-</HTML> 
+</HTML>
