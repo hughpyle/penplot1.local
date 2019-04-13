@@ -37,8 +37,8 @@ cat > ${SPOOL_FILE}
 #file ${SPOOL_FILE} | grep PostScript
 
 if file ${SPOOL_FILE} | grep -q "PDF"; then
-	echo "${SPOOL_FILE} is a pdf" >> ${LOGFILE}
-	pstoedit -f plot-hpgl -dt -pti ${SPOOL_FILE} ${OUTPUT_FILE} >>${LOGFILE} 2>&1
+    echo "${SPOOL_FILE} is a pdf" >> ${LOGFILE}
+    pstoedit -f plot-hpgl -dt -pti ${SPOOL_FILE} ${OUTPUT_FILE} >>${LOGFILE} 2>&1
 elif file ${SPOOL_FILE} | grep -q "PostScript"; then
     echo "${SPOOL_FILE} is postscript" >> ${LOGFILE}
     ps2pdf ${SPOOL_FILE} ${SPOOL_FILE}.pdf >>${LOGFILE} 2>&1
