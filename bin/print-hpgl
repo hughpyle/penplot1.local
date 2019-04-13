@@ -9,6 +9,11 @@ LOGFILE=print-hpgl.log
 # The output device is a Teensy, appears as /dev/ttyACM0
 DEVICE=/dev/ttyACM0
 
+# Options for HPGL conversion in pstoedit
+export HPGL_VERSION=1
+export HPGL_ROTATE=90
+export HPGL_PENS='1=black:2=red:3=green:4=yellow:5=blue:6=magenta:7=cyan'
+
 # Initialize the device before each print job
 # see https://archive.org/details/HP7475AInterfacingandProgrammingManual/page/n145
 # see https://archive.org/details/HP7475AInterfacingandProgrammingManual/page/n199
@@ -38,15 +43,15 @@ cat > ${SPOOL_FILE}
 
 if file ${SPOOL_FILE} | grep -q "PDF"; then
     echo "${SPOOL_FILE} is a pdf" >> ${LOGFILE}
-    pstoedit -f plot-hpgl -dt -pti ${SPOOL_FILE} ${OUTPUT_FILE} >>${LOGFILE} 2>&1
+    pstoedit -f plot-hpgl -dt -pta -df Helvetica ${SPOOL_FILE} ${OUTPUT_FILE} >>${LOGFILE} 2>&1
 elif file ${SPOOL_FILE} | grep -q "PostScript"; then
     echo "${SPOOL_FILE} is postscript" >> ${LOGFILE}
     ps2pdf ${SPOOL_FILE} ${SPOOL_FILE}.pdf >>${LOGFILE} 2>&1
-    pstoedit -f plot-hpgl -dt -pti ${SPOOL_FILE}.pdf ${OUTPUT_FILE} >>${LOGFILE} 2>&1
+    pstoedit -f plot-hpgl -dt -pta -df Helvetica ${SPOOL_FILE}.pdf ${OUTPUT_FILE} >>${LOGFILE} 2>&1
 elif file ${SPOOL_FILE} | grep -q "SVG"; then
     echo "${SPOOL_FILE} is SVG" >> ${LOGFILE}
     rsvg-convert -f pdf -o ${SPOOL_FILE}.pdf ${SPOOL_FILE} >>${LOGFILE} 2>&1
-    pstoedit -f plot-hpgl -dt -pti ${SPOOL_FILE}.pdf ${OUTPUT_FILE} >>${LOGFILE} 2>&1
+    pstoedit -f plot-hpgl -dt -pta -df Helvetica ${SPOOL_FILE}.pdf ${OUTPUT_FILE} >>${LOGFILE} 2>&1
 elif head -n 1 ${SPOOL_FILE} | grep -q "^IN;"; then
     echo "${SPOOL_FILE} is HPGL" >> ${LOGFILE}
     OUTPUT_FILE=${SPOOL_FILE}
