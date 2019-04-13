@@ -1,7 +1,7 @@
 // Serial interface for HPGL plotter
 
 
-#define BAUDRATE 9600
+#define BAUDRATE 4800
 #define PLOTTER Serial1
 #define USB Serial
 #define XON 0x11
@@ -45,7 +45,7 @@ void loop() {
     else {
       USB.write(data);
     }
-    delay(5);
+    delay(1);
   }
 
   // Set the LED depending on whether we're active
