@@ -1,32 +1,58 @@
 <HTML>
 <HEAD>
     <TITLE>penplot1</TITLE>
-    <LINK REL="STYLESHEET" TYPE="text/css" HREF="page.css">
+    <LINK REL="STYLESHEET" TYPE="text/css" HREF="gh1.css">
+    <LINK REL="STYLESHEET" TYPE="text/css" HREF="gh2.css">
 </HEAD>
-<BODY>
+<BODY class="markdown-body" style="margin:50px;">
 <h1 class="title">penplot1</h1>
 
-<p>This is the Digital LVP-16 pen plotter.  It's essentially the same as the classic HP7475a model, and was introduced in 1983 selling for US$1895.
-</p>
-
-<p>The plotter uses up to 6 pens.  There's a selection of colors of original pens, not all of them draw very well.  Additionally there are Sharpie adapters if you want to use your own pens.
+<p>This is the Digital LVP16 pen plotter.  It's the same as the classic HP7475a model,
+        and was introduced in 1983 selling for US$1895.  Despite its age, you can do cool things with it.
 </p>
 
 <h2>Installing as a Printer</h2>
 
-You should be able to discover the plotter on the network.
-Alternatively, this link will add it:
+<p>You should be able to discover the plotter on the network.
+Alternatively, this link will add it:<br>
 <a href="ipp://penplot1.local/">ipp://penplot1.local/</a>
+</p>
+
+
+<h2>Setting Up the Pens</h2>
+
+<p>The plotter uses up to 6 pens.  There's a selection of colors of original pens, not all of them draw very well.
+        Additionally there are Sharpie adapters if you want to use your own.
+</p>
+
+<p>The standard pen color positions are:
+1=black
+2=red
+3=green
+4=yellow
+5=blue
+6=magenta
+</p>
+
+<p>But use whatever colors are appropriate.  Also, you can just insert a single pen directly into the holder,
+and remove the carousel.
+</p>
+
+<p><b>Remember to re-cap the pens when you're finished</b>, otherwise they'll dry out and become useless.
+        Please put "bad" pens into the "bad pens" box.  Don't throw them away, we may be able to refill them.
+</p>
+
+<img src="controls.jpg" style="width:30%">
 
 <h2>Setting Up the Paper</h2>
 
-<p>Check that the paper-size DIP switch at the rear of the printer is set appropriately,
-        to "A4"/Letter or "B4"/B size.
-
+<p>Check that the paper-size light is set appropriately, to "A4"/Letter or "B4"/B size.
+        To switch paper size, press ENTER and SIZE together.
 </p>
-<img src="papersize.png">
-<p>Lift the paper-release lever.
-Place a sheet with its far edge just behind the roller, by the mark.
+
+<p>Lift the paper-release lever.  The ERROR light will come on.  (This is OK).
+</p>
+<p>Place a sheet with its far edge just behind the roller, by the mark.
 Lower the paper-release lever.
 </p>
 <p>Then check the P1 and P2 "scaling points".  Think of these as the zero-point (P1),
@@ -39,22 +65,26 @@ page as a landscape).  Then press the <b>P2</b> button, and the pen and paper wi
 to the opposite corner.  Check that the paper is still held correctly at both these
 points.
 </p>
-<p><a href="https://archive.org/details/HP7475AInterfacingandProgrammingManual/page/n35"><img src="p1p2.png" style="width:35%"></a></p>
+<p><a href="https://archive.org/details/HP7475AInterfacingandProgrammingManual/page/n35">
+        <img src="p1.png" style="width:35%"></a>
+        <img src="p2.png" style="width:35%"></a>
+</p>
 
 <p>Then you're ready to print.
 </p>
 
 <h2>Printing</h2>
-<p>
-You can print any document from Windows or MacOS.  Be careful: complex documents will
+<p>You can print any document from Windows or MacOS.  Be careful: complex documents will
 take a very long time to print.  Please be considerate!  Start with <b>simple line-drawings</b>,
 and then try small amounts of shading or text.
 </p>
 
-<p>
-You can also print directly using SVG or the printer's raw &quot;HPGL&quot; format.
-For example you can export Inkscape drawings in HPGL or SVG.  There are also HPGL connectors for Processing, D3.js and so on.
-<br>To print a raw HPGL file (usually ".plt" file extension) from a Linux or MacOS command-line:, first check that you have installed the printer named `penplot1_local`:
+<p>You can also print files directly if they are in the printer's native &quot;HPGL&quot; format, or SVG or PDF.  For example
+        you can export Inkscape drawings in HPGL or SVG.  There are also HPGL connectors for Processing, D3.js and so on.
+        You can even write HPGL by hand (it's <a href="https://en.wikipedia.org/wiki/HP-GL">quite simple</a>).
+</p>
+
+<p>To print a file from a Linux or MacOS command-line, first check that you have installed the printer named `penplot1_local`:
 <pre class="command">
 lpstat -p -d
 </pre>
@@ -68,28 +98,43 @@ lp -d penplot1_local -o raw FILENAME.svg
 </pre>
 </p>
 
+<p>Check out <a href="https://twitter.com/search?q=%23plottertwitter">#plottertwitter</a> and the tools at
+        <a href="https://drawingbots.net/">drawingbots.net</a> for inspiration, people are writing programs
+        that produce some really interesting plots.
+</p>
+
+<h2>Virtual Serial Port</h2>
+<p>Sometimes you want to talk to the plotter interactively, as if it's connected directly to your computer.
+        This lets you use programs such as <a href="http://sites.music.columbia.edu/cmc/chiplotle/">Chiplotle</a>,
+        which can be really powerful and flexible.
+</p>
+<p>Do this using <code>socat</code>:</p>
+<pre>
+        TODO
+</pre>
+
+
 <h2>Additional Links and Resources</h1>
 <p>
 <ul>
         <li><a href="https://archive.org/details/HP7475AOperationManual">Operation Manual</a></li>
         <li><a href="https://archive.org/details/HP7475AInterfacingandProgrammingManual/page/n1">Interfacing and Programming Manual</a></li>
         <li><a href="https://github.com/beardicus/awesome-plotters#hpgl">A nice list of HPGL tools</a></li>
-        <li><a href="https://twitter.com/search?q=%23plottertwitter">#plottertwitter</a></li>
-        <li><a href="https://drawingbots.net/">drawingbots.net</a></li>
 </ul>
 </p>
 
 <h2>Printer Settings</h2>
-<p>You shouldn't need to change the other settings.  The correct baud rate is 9600, per this picture:
+<p>You shouldn't need to change the other settings.  The usual settings should be: 4800 baud, one stop bit, no parity.
 </p>
 <img src="baud.png">
 
 <h2>TODO</h2>
 <p>
 <ul>
-        <li>Testing</li>
+        <li>Testing.  Fix the crashes.</li>
         <li>Some pictures</li>
-        <li>Some way to plot interactively,not just batch print services.  Maybe just a socket that listens when the ipp job isn't busy printing?</li>
+        <li>Do all printing over socat (including the ipp printing)</li>
+        <li>Server for socat, with singleton control (and login username!)</li>
         <li>Multicolor LED light-bar driven by plot activity</li>
 </ul>
 </p>

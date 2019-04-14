@@ -11,8 +11,8 @@ DEVICE=/dev/ttyACM0
 
 # Options for HPGL conversion in pstoedit
 export HPGL_VERSION=1
-export HPGL_ROTATE=90
-export HPGL_PENS='1=black:2=red:3=green:4=yellow:5=blue:6=magenta:7=cyan'
+export HPGL_ROTATE=0
+export HPGL_PENS='1=black:2=red:3=green:4=yellow:5=blue:6=magenta'
 
 # Initialize the device before each print job
 # see https://archive.org/details/HP7475AInterfacingandProgrammingManual/page/n145
