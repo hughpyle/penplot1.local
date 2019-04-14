@@ -55,11 +55,11 @@ elif file ${SPOOL_FILE} | grep -q "SVG"; then
 elif head -n 1 ${SPOOL_FILE} | grep -q "^IN;"; then
     echo "${SPOOL_FILE} is HPGL" >> ${LOGFILE}
     OUTPUT_FILE=${SPOOL_FILE}
-elif [jq type ${SPOOL_FILE} --eq "object"]; then
+elif [ $(jq type ${SPOOL_FILE}) == '"object"' ]; then
     echo "${SPOOL_FILE} is JSON" >> ${LOGFILE}
-    lsystem --file ${SPOOL_FILE} > ${OUTPUT_FILE} 2>${LOGFILE}
+    ${HOME}/hpgl/bin/lsystem --file ${SPOOL_FILE} > ${OUTPUT_FILE} 2>${LOGFILE}
 else
-    echo "Not a file we can handle"
+    echo "Not a file we can handle" >> ${LOGFILE}
     exit 1
 fi
 
