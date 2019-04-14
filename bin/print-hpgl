@@ -57,8 +57,7 @@ elif head -n 1 ${SPOOL_FILE} | grep -q "^IN;"; then
     OUTPUT_FILE=${SPOOL_FILE}
 elif [jq type ${SPOOL_FILE} --eq "object"]; then
     echo "${SPOOL_FILE} is JSON" >> ${LOGFILE}
-    lsystem -o ${SPOOL_FILE}.plt >>${LOGFILE} 2>&1
-    pstoedit -f plot-hpgl -dt -pta -df Helvetica ${SPOOL_FILE}.pdf ${OUTPUT_FILE} >>${LOGFILE} 2>&1
+    lsystem --file ${SPOOL_FILE} > ${OUTPUT_FILE} 2>${LOGFILE}
 else
     echo "Not a file we can handle"
     exit 1

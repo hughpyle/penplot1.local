@@ -139,15 +139,19 @@ class LSystem(object):
 
 @click.command()
 @click.argument("STRING")
+@click.option("--file", is_flag=True, help="Input is a filename not lsystem string")
 @click.option("--ps", is_flag=True, help="PostScript output")
 @click.option("--verbose", is_flag=True)
-def main(string, ps, verbose):
+def main(string, file, ps, verbose):
     #
     # Take the string, e.g.
     # {"start":"F", "rules":{"F":"F-F++F-F"}, "a":60, "iter":1}
     # {"start":"FX","rules":{"F":"XF-","J":"++KXKKJ","K":"+","X":"[]++J+XFXF"},"a":72,"iter":4}
     #
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
+    if file:
+        with open(string, "r") as stringfile:
+            string = stringfile.read()
     if ps:
         mapper = POSTSCRIPT_MAPPING
     else:
