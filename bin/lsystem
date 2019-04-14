@@ -1,0 +1,159 @@
+#!/usr/bin/env python
+
+"""
+L-system
+using the syntax of https://twitter.com/lsystembot
+"""
+
+import json
+import math
+import logging
+from dataclasses import dataclass, replace
+import click
+
+
+@dataclass
+class Bound:
+    x1: float
+    y1: float
+    x2: float
+    y2: float
+
+
+@dataclass
+class Point:
+    x: float
+    y: float
+    a: float
+
+    def move(self):
+        return replace(self, x=self.x + math.cos(math.radians(self.a)), y=self.y + math.sin(math.radians(self.a)))
+
+    def __add__(self, angle):
+        return replace(self, a=self.a + angle)
+
+    def __sub__(self, angle):
+        return replace(self, a=self.a - angle)
+
+
+POSTSCRIPT_MAPPING = {
+    "pre": """%!PS
+/s 0.0072 def
+s s scale
+0.1 s div setlinewidth
+newpath
+""",
+    "post": "0 setgray stroke showpage",
+    "dpre": "",
+    "dpost": " lineto\n",
+    "mpre": "",
+    "mpost": " moveto\n",
+    "sep": " ",
+    "scale": 70000,  # 10000 units per inch
+    "offset": 5000
+}
+
+HPGL_MAPPING = {
+    "pre": "IN;IP;PU;SP1;LT;PA0,0;",
+    "post": "PU;PA0,0;SP0;",
+    "dpre": "PD;PA",
+    "dpost": ";",
+    "mpre": "PU;PA",
+    "mpost": ";",
+    "sep": ",",
+    "scale": 8000,  # 1016 units per inch
+    "offset": 500
+}
+
+
+class LSystem(object):
+
+    """
+    Initialize with a mapping (to the output format)
+    and a string which is the LSystem expressed in JSON.
+    """
+
+    def __init__(self, mapping, string):
+        self.mapping = mapping
+        self.process = json.loads(string)
+        self.state = "[]" + self.process["start"]
+        self.stack = []
+        self.point = Point(0, 0, 0)
+        self.bound = Bound(0, 0, 1, 1)
+
+    def start(self):
+        self.state = "[]" + self.process["start"]
+
+    def run(self):
+        self.start()
+        for _ in range(self.process["iter"]):
+            logging.debug(self.state)
+            self.state = "".join([self.process["rules"].get(c, c) for c in self.state])
+        logging.debug(self.state)
+        return self.render()
+
+    def render(self):
+        output = [self.mapping["pre"]]
+        for c in self.state:
+            output.extend(self.act(c))
+        output.append(self.mapping["post"])
+        result = ""
+        XOFF = -self.bound.x1
+        YOFF = -self.bound.y1
+        XMULT = self.mapping["scale"] / (self.bound.x2 - self.bound.x1)
+        YMULT = self.mapping["scale"] / (self.bound.y2 - self.bound.y1)
+        mult = min(XMULT, YMULT)
+        off = self.mapping["offset"]
+        for r in output:
+            if isinstance(r, tuple):
+                result = result + f"{int((r[0]+XOFF)*mult+off)}{self.mapping['sep']}{int((r[1]+YOFF)*mult+off)}"
+            else:
+                result = result + r
+        return result
+
+    def act(self, action):
+        result = []
+        if action == "+":
+            self.point = self.point + self.process["a"]
+        elif action == "-":
+            self.point = self.point - self.process["a"]
+        elif action == "[":
+            self.stack.append(self.point)
+        elif action == "]":
+            self.point = self.stack.pop()
+            result = [self.mapping["mpre"], (self.point.x, self.point.y), self.mapping["mpost"]]
+        elif action <= "T":
+            # actions greater than "T" don't print anything
+            self.point = self.point.move()
+            if self.point.x < self.bound.x1:
+                self.bound.x1 = self.point.x
+            if self.point.y < self.bound.y1:
+                self.bound.y1 = self.point.y
+            if self.point.x > self.bound.x2:
+                self.bound.x2 = self.point.x
+            if self.point.y > self.bound.x2:
+                self.bound.y2 = self.point.y
+            result = [self.mapping["dpre"], (self.point.x, self.point.y), self.mapping["dpost"]]
+        return result
+
+
+@click.command()
+@click.argument("STRING")
+@click.option("--ps", is_flag=True, help="PostScript output")
+@click.option("--verbose", is_flag=True)
+def main(string, ps, verbose):
+    #
+    # Take the string, e.g.
+    # {"start":"F", "rules":{"F":"F-F++F-F"}, "a":60, "iter":1}
+    # {"start":"FX","rules":{"F":"XF-","J":"++KXKKJ","K":"+","X":"[]++J+XFXF"},"a":72,"iter":4}
+    #
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
+    if ps:
+        mapper = POSTSCRIPT_MAPPING
+    else:
+        mapper = HPGL_MAPPING
+    print(LSystem(mapper, string).run())
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+
+"""
+Like cat, but with occasionally checking for printer errors
+"""
+
+import sys
+import click
+import serial
+
+COUNT = 100
+
+# Error codes from "OE"
+ERROR_CODES = {
+    b"0": None,
+    b"1": "Instruction not recognized",
+    b"2": "Wrong number of parameters",
+    b"3": "Out-of-range parameters",
+    b"4": "Not used",
+    b"5": "Unknown character set",
+    b"6": "Position overflow",
+    b"7": "Not used",
+    b"8": "Vector received while pinch wheels raised"
+}
+
+# Extended error codes from "\033.E"
+EXT_ERROR_CODES = {
+    b"0": None,
+    b"10": "output instruction received while another instruction was executing",
+    b"11": "invalid device control instruction (escape sequence)",
+    b"12": "invalid parameter in a device control instruction (escape sequence)",
+    b"13": "parameter out of range",
+    b"14": "too many parameters received",
+    b"15": "framing error, parity error, or overrun error",
+    b"16": "input buffer overflowed"
+}
+
+
+def status(serial):
+    # Wait until the buffer is near empty
+    serial.write(b"\033.L")
+    serial.flush()
+    response = serial.read_until(expected=b"\r")
+    sys.stdout.write(b"\nBuff: " + str(response, encoding="utf-8"))
+    sys.stdout.flush()
+
+    # Ask the device if any errors occurred (and clear the error flag)
+    serial.write(b"OE;")
+    # serial.write(b"\033.E")
+    serial.flush()
+    # The response should be a decimal number (the error code)
+    # followed by the output terminator (carriage return)
+
+    # 0 = no error
+    # 10 = output instruction received while another instruction was executing
+    # 11 = invalid device control instruction (escape sequence)
+    # 12 = invalid parameter in a device control instruction (escape sequence)
+    # 13 = parameter out of range
+    # 14 = too many parameters received
+    # 15 = framing error, parity error, or overrun error
+    # 16 = input buffer overflowed
+    response = serial.read_until(expected=b"\r")
+    return ERROR_CODES.get(response)
+
+
+@click.command()
+@click.argument("src")
+@click.argument("dst")
+def main(src, dst):
+    n = 0
+    with open(src, "rb") as source:
+        with serial.Serial(dst, timeout=1.0) as dest:
+            byte = source.read(1)
+            while byte != "":
+                n = n + 1
+                sys.stdout.write(str(byte, encoding="utf-8"))
+                sys.stdout.flush()
+                dest.write(byte)
+                if byte == ";" and n > COUNT:
+                    n = 0
+                    err = status(dest)
+                    # if err:
+                    print("\nError: {}".format(err))
+                byte = source.read(1)
+            dest.write(b"\r\n\r\n\r\n")
+            dest.flush()
+            print("\nStatus: {}".format(status(dest)))
+
+
+if __name__ == "__main__":
+    main()
