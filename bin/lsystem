@@ -61,8 +61,8 @@ HPGL_MAPPING = {
     "mpre": "PU;PA",
     "mpost": ";",
     "sep": ",",
-    "scale": 8000,  # 1016 units per inch
-    "offset": 500
+    "scale": 7000,  # 1016 units per inch, max 7962 without offset
+    "offset": 250
 }
 
 

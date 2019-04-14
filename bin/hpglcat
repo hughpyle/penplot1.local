@@ -8,31 +8,31 @@ import sys
 import click
 import serial
 
-COUNT = 100
+COUNT = 800
 
 # Error codes from "OE"
 ERROR_CODES = {
     b"0": None,
-    b"1": "Instruction not recognized",
-    b"2": "Wrong number of parameters",
-    b"3": "Out-of-range parameters",
-    b"4": "Not used",
-    b"5": "Unknown character set",
-    b"6": "Position overflow",
-    b"7": "Not used",
-    b"8": "Vector received while pinch wheels raised"
+    b"1": b"Instruction not recognized",
+    b"2": b"Wrong number of parameters",
+    b"3": b"Out-of-range parameters",
+    b"4": b"Not used",
+    b"5": b"Unknown character set",
+    b"6": b"Position overflow",
+    b"7": b"Not used",
+    b"8": b"Vector received while pinch wheels raised"
 }
 
 # Extended error codes from "\033.E"
 EXT_ERROR_CODES = {
     b"0": None,
-    b"10": "output instruction received while another instruction was executing",
-    b"11": "invalid device control instruction (escape sequence)",
-    b"12": "invalid parameter in a device control instruction (escape sequence)",
-    b"13": "parameter out of range",
-    b"14": "too many parameters received",
-    b"15": "framing error, parity error, or overrun error",
-    b"16": "input buffer overflowed"
+    b"10": b"output instruction received while another instruction was executing",
+    b"11": b"invalid device control instruction (escape sequence)",
+    b"12": b"invalid parameter in a device control instruction (escape sequence)",
+    b"13": b"parameter out of range",
+    b"14": b"too many parameters received",
+    b"15": b"framing error, parity error, or overrun error",
+    b"16": b"input buffer overflowed"
 }
 
 
@@ -40,9 +40,10 @@ def status(serial):
     # Wait until the buffer is near empty
     serial.write(b"\033.L")
     serial.flush()
-    response = serial.read_until(expected=b"\r")
-    sys.stdout.write(b"\nBuff: " + str(response, encoding="utf-8"))
-    sys.stdout.flush()
+    response = serial.read_until(terminator=b"\r")
+
+    # sys.stdout.write("\nBuff: {}".format(response))
+    # sys.stdout.flush()
 
     # Ask the device if any errors occurred (and clear the error flag)
     serial.write(b"OE;")
@@ -59,7 +60,7 @@ def status(serial):
     # 14 = too many parameters received
     # 15 = framing error, parity error, or overrun error
     # 16 = input buffer overflowed
-    response = serial.read_until(expected=b"\r")
+    response = serial.read_until(terminator=b"\r")
     return ERROR_CODES.get(response)
 
 
@@ -69,18 +70,20 @@ def status(serial):
 def main(src, dst):
     n = 0
     with open(src, "rb") as source:
-        with serial.Serial(dst, timeout=1.0) as dest:
+        with serial.Serial(dst) as dest:
             byte = source.read(1)
-            while byte != "":
+            while byte:
                 n = n + 1
-                sys.stdout.write(str(byte, encoding="utf-8"))
-                sys.stdout.flush()
+                # sys.stdout.write(str(byte, encoding="utf-8"))
+                # sys.stdout.flush()
                 dest.write(byte)
-                if byte == ";" and n > COUNT:
+                if byte == b";" and n > COUNT:
                     n = 0
                     err = status(dest)
-                    # if err:
-                    print("\nError: {}".format(err))
+                    if err:
+                        sys.stdout.write("\nError: {}".format(err))
+                        sys.stdout.flush()
+
                 byte = source.read(1)
             dest.write(b"\r\n\r\n\r\n")
             dest.flush()

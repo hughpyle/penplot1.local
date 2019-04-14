@@ -1,7 +1,7 @@
 // Serial interface for HPGL plotter
 
 
-#define BAUDRATE 4800
+#define BAUDRATE 9600
 #define PLOTTER Serial1
 #define USB Serial
 #define XON 0x11

@@ -55,27 +55,15 @@ elif file ${SPOOL_FILE} | grep -q "SVG"; then
 elif head -n 1 ${SPOOL_FILE} | grep -q "^IN;"; then
     echo "${SPOOL_FILE} is HPGL" >> ${LOGFILE}
     OUTPUT_FILE=${SPOOL_FILE}
+elif [jq type ${SPOOL_FILE} --eq "object"]; then
+    echo "${SPOOL_FILE} is JSON" >> ${LOGFILE}
+    lsystem -o ${SPOOL_FILE}.plt >>${LOGFILE} 2>&1
+    pstoedit -f plot-hpgl -dt -pta -df Helvetica ${SPOOL_FILE}.pdf ${OUTPUT_FILE} >>${LOGFILE} 2>&1
 else
     echo "Not a file we can handle"
     exit 1
 fi
 
-# Ask the device if any errors occurred (and clear the error flag)
-printf "\033.E" > ${DEVICE}
-# The response should be a decimal number (the error code)
-# followed by the output terminator (carriage return)
-# 0 = no error
-# 10 = output instruction received while another instruction was executing
-# 11 = invalid device control instruction (escape sequence)
-# 12 = invalid parameter in a device control instruction (escape sequence)
-# 13 = parameter out of range
-# 14 = too many parameters received
-# 15 = framing error, parity error, or overrun error
-# 16 = input buffer overflowed
-read -t 1 -d "\r" result < ${DEVICE}
-echo "Result code: " $result >>${LOGFILE}
 
-cat ${OUTPUT_FILE} > ${DEVICE}
-printf "\033.E" > ${DEVICE}
-read -t 1 -d "\r" result < ${DEVICE}
-echo "Result code: " $result >>${LOGFILE}
+# Send to the device
+${HOME}/hpgl/bin/hpglcat ${OUTPUT_FILE} ${DEVICE} >> ${LOGFILE} 2>&1
