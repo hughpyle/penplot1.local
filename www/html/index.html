@@ -147,6 +147,13 @@ lp -d penplot1_local -o raw <(echo '{"start":"UUH","rules":{"F":"[H]-U+-FFF","H"
 <h2>TODO</h2>
 <p>
 <ul>
+<li>
+landscape or portrait? how does the printer say which it defaults? how does the job tell the printer?
+- put something into the ppd for users to select</li>
+<li>scaling - set options before job? for pdf
+- currently the aspect ratio comes out wrong for pdf</li>
+<li>replace psu filter caps?? 2200/40, 6800</li>
+</li>
         <li>Do all printing over socat (including the ipp printing)</li>
         <li>Server for socat, with singleton control (and login username!)</li>
         <li>Multicolor LED light-bar driven by plot activity</li>
