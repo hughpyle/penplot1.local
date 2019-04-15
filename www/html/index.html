@@ -75,8 +75,8 @@ points.
 
 <h2>Printing</h2>
 <p>You can print any document from Windows or MacOS.  Be careful: complex documents will
-take a very long time to print.  Please be considerate!  Start with <b>simple line-drawings</b>,
-and then try small amounts of shading or text.
+take a <b>very</b> long time to print.  Please be considerate!  Start with <b>simple line-drawings</b>,
+and then try small amounts of shading or big text.
 </p>
 
 <p>You can also print files directly if they are in the printer's native &quot;HPGL&quot; format, or SVG or PDF.  For example
@@ -103,6 +103,21 @@ lp -d penplot1_local -o raw FILENAME.svg
         that produce some really interesting plots.
 </p>
 
+<h2>L-System</h2>
+
+<p>The plotter understands a L-System JSON syntax for describing fractal line-drawings.  This is so that you
+        can take patterns from <a href="https://twitter.com/lsystembot">LSystemBot on Twitter</a>, or write your own, and
+        plot them like <a href="https://twitter.com/LSystemBot/status/1117551865808314368">this</a>:
+<pre class="command">
+lp -d penplot1_local -o raw <(echo '{"start":"UUH","rules":{"F":"[H]-U+-FFF","H":"HF+FU"},"a":60,"iter":4}')
+</pre>
+</p>
+
+<p>Read more about L-Systems in <a href="https://en.wikipedia.org/wiki/L-system">Wikipedia</a>,
+        and <a href="http://dkandalov.github.io/lsystem/">here</a>
+        or <a href="http://www.cs.unh.edu/~charpov/programming-lsystems.html">here</a>.
+</p>
+
 <h2>Virtual Serial Port</h2>
 <p>Sometimes you want to talk to the plotter interactively, as if it's connected directly to your computer.
         This lets you use programs such as <a href="http://sites.music.columbia.edu/cmc/chiplotle/">Chiplotle</a>,
@@ -114,7 +129,7 @@ lp -d penplot1_local -o raw FILENAME.svg
 </pre>
 
 
-<h2>Additional Links and Resources</h1>
+<h1>Additional Links and Resources</h1>
 <p>
 <ul>
         <li><a href="https://archive.org/details/HP7475AOperationManual">Operation Manual</a></li>
@@ -124,15 +139,13 @@ lp -d penplot1_local -o raw FILENAME.svg
 </p>
 
 <h2>Printer Settings</h2>
-<p>You shouldn't need to change the other settings.  The usual settings should be: 4800 baud, one stop bit, no parity.
+<p>You shouldn't need to change the other settings.  The usual settings should be: 9600 baud, no parity.
 </p>
 <img src="baud.png">
 
 <h2>TODO</h2>
 <p>
 <ul>
-        <li>Testing.  Fix the crashes.</li>
-        <li>Some pictures</li>
         <li>Do all printing over socat (including the ipp printing)</li>
         <li>Server for socat, with singleton control (and login username!)</li>
         <li>Multicolor LED light-bar driven by plot activity</li>
