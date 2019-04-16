@@ -1,0 +1,9 @@
+{
+"start": "X",
+"rules": {
+    "X": "-YF+XFX+FY-",
+    "Y": "+XF-YFY-FX+"
+},
+"a": 90,
+"iter": 6
+}

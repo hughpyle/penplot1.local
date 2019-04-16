@@ -1,0 +1,8 @@
+{
+"start": "F+F+F+F",
+"rules": {
+    "F": "FF+F++F+F"
+},
+"a": 90,
+"iter": 5
+}

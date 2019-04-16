@@ -3,6 +3,27 @@
 """
 L-system
 using the syntax of https://twitter.com/lsystembot
+(but to use their exact alphabet, use "--draw F", our default alphabet draws with A or F)
+
+Character  Meaning
+   F, A       Move forward by line length drawing a line
+   G, B, f    Move forward by line length without drawing a line
+   +          Turn left by turning angle
+   -          Turn right by turning angle
+   [          Push current drawing state onto stack
+   ]          Pop current drawing state from the stack
+   |          Reverse direction (ie: turn by 180 degrees)
+
+To maybe implement later: (http://paulbourke.net/fractals/lsys/)
+   {          Open a polygon
+   }          Close a polygon and fill it with fill colour
+   >          Multiply the line length by the line length scale factor
+   <          Divide the line length by the line length scale factor
+   &          Swap the meaning of + and -
+   (          Decrement turning angle by turning angle increment
+   )          Increment turning angle by turning angle increment
+
+All other characters are allowed but do not render in the output.
 """
 
 import json
@@ -65,6 +86,12 @@ HPGL_MAPPING = {
     "offset": 250
 }
 
+ITER_DEFAULT = 8
+ANGLE_DEFAULT = 90
+
+DRAWCHARS = "AF"
+MOVECHARS = "BGf"
+
 
 class LSystem(object):
 
@@ -73,20 +100,22 @@ class LSystem(object):
     and a string which is the LSystem expressed in JSON.
     """
 
-    def __init__(self, mapping, string):
+    def __init__(self, mapping, string, iter, draw, move):
         self.mapping = mapping
         self.process = json.loads(string)
-        self.state = "[]" + self.process["start"]
+        self.state = None
         self.stack = []
         self.point = Point(0, 0, 0)
         self.bound = Bound(0, 0, 1, 1)
-
-    def start(self):
-        self.state = "[]" + self.process["start"]
+        self.iter = iter or self.process.get("iter", ITER_DEFAULT)
+        self.angle = self.process.get("a", ANGLE_DEFAULT)
+        self.moved = True
+        self.drawchars = draw or "ABF"
+        self.movechars = move or "fG"
 
     def run(self):
-        self.start()
-        for _ in range(self.process["iter"]):
+        self.state = "[]" + self.process["start"]
+        for _ in range(self.iter):
             logging.debug(self.state)
             self.state = "".join([self.process["rules"].get(c, c) for c in self.state])
         logging.debug(self.state)
@@ -111,29 +140,45 @@ class LSystem(object):
                 result = result + r
         return result
 
+    def update_bounds(self):
+        if self.point.x < self.bound.x1:
+            self.bound.x1 = self.point.x
+        if self.point.y < self.bound.y1:
+            self.bound.y1 = self.point.y
+        if self.point.x > self.bound.x2:
+            self.bound.x2 = self.point.x
+        if self.point.y > self.bound.x2:
+            self.bound.y2 = self.point.y
+
     def act(self, action):
         result = []
         if action == "+":
-            self.point = self.point + self.process["a"]
-        elif action == "-":
-            self.point = self.point - self.process["a"]
+            self.point = self.point + self.angle
+        elif action in ["-", chr(0x2212)]:
+            self.point = self.point - self.angle
+        elif action == "|":
+                self.point = self.point + 180
         elif action == "[":
             self.stack.append(self.point)
         elif action == "]":
             self.point = self.stack.pop()
-            result = [self.mapping["mpre"], (self.point.x, self.point.y), self.mapping["mpost"]]
-        elif action <= "T":
-            # actions greater than "T" don't print anything
+        elif action in self.drawchars:
+            # move and draw
+            if 1:  # self.moved:
+                result = [self.mapping["mpre"], (self.point.x, self.point.y), self.mapping["mpost"]]
+                self.update_bounds()
             self.point = self.point.move()
-            if self.point.x < self.bound.x1:
-                self.bound.x1 = self.point.x
-            if self.point.y < self.bound.y1:
-                self.bound.y1 = self.point.y
-            if self.point.x > self.bound.x2:
-                self.bound.x2 = self.point.x
-            if self.point.y > self.bound.x2:
-                self.bound.y2 = self.point.y
-            result = [self.mapping["dpre"], (self.point.x, self.point.y), self.mapping["dpost"]]
+            self.update_bounds()
+            result.extend([self.mapping["dpre"], (self.point.x, self.point.y), self.mapping["dpost"]])
+            self.moved = False
+        elif action in self.movechars:
+            # move without drawing
+            self.point = self.point.move()
+            self.moved = True
+            result = [self.mapping["mpre"], (self.point.x, self.point.y), self.mapping["mpost"]]
+        else:
+            # Other characters have no effect on the state
+            pass
         return result
 
 
@@ -142,7 +187,10 @@ class LSystem(object):
 @click.option("--file", is_flag=True, help="Input is a filename not lsystem string")
 @click.option("--ps", is_flag=True, help="PostScript output")
 @click.option("--verbose", is_flag=True)
-def main(string, file, ps, verbose):
+@click.option("--iter", default=None, type=int, help="Override the number of iterations")
+@click.option("--draw", default=DRAWCHARS, help="Alphabet that draw")
+@click.option("--move", default=MOVECHARS, help="Alphabet that move")
+def main(string, file, ps, verbose, iter, draw, move):
     #
     # Take the string, e.g.
     # {"start":"F", "rules":{"F":"F-F++F-F"}, "a":60, "iter":1}
@@ -156,7 +204,7 @@ def main(string, file, ps, verbose):
         mapper = POSTSCRIPT_MAPPING
     else:
         mapper = HPGL_MAPPING
-    print(LSystem(mapper, string).run())
+    print(LSystem(mapper, string, iter, draw, move).run())
 
 
 if __name__ == "__main__":
