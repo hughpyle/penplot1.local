@@ -13,12 +13,12 @@ Character  Meaning
    [          Push current drawing state onto stack
    ]          Pop current drawing state from the stack
    |          Reverse direction (ie: turn by 180 degrees)
+   >          Multiply the line length by the line length scale factor
+   <          Divide the line length by the line length scale factor
 
 To maybe implement later: (http://paulbourke.net/fractals/lsys/)
    {          Open a polygon
    }          Close a polygon and fill it with fill colour
-   >          Multiply the line length by the line length scale factor
-   <          Divide the line length by the line length scale factor
    &          Swap the meaning of + and -
    (          Decrement turning angle by turning angle increment
    )          Increment turning angle by turning angle increment
@@ -55,9 +55,9 @@ class Point:
     y: float
     a: float
 
-    def move(self):
-        self.x += math.cos(math.radians(self.a))
-        self.y += math.sin(math.radians(self.a))
+    def move(self, length):
+        self.x += length * math.cos(math.radians(self.a))
+        self.y += length * math.sin(math.radians(self.a))
 
     def __add__(self, angle):
         self.a += angle
@@ -85,17 +85,32 @@ def ps_line(points):
 
 
 POSTSCRIPT_MAPPING = {
-    "pre": """%!PS
+    "pre": """%!PS-Adobe-3.0
+%%Orientation: Landscape
+%%DocumentMedia: Default 612 792 80 () ()
+%%Pages: 1
+%%EndComments
+%%EndProlog
+%%BeginSetup
+  % Letter
+  <</PageSize[612 792]/Orientation 0>>setpagedevice
+%%EndSetup
+%%Page: 1 1
+%%BeginPageSetup
+90 rotate 0 -612 translate
+%%EndPageSetup
 /s 0.0072 def
 s s scale
 0.1 s div setlinewidth
 0 setgray
 """,
-    "post": "showpage\n",
+    "post": """showpage
+%%Trailer
+%%EOF""",
     "line": ps_line,
     "sep": " ",
-    "scalex":  85000,  # 10000 units per inch
-    "scaley": 110000
+    "scalex": 110000,  # 10000 units per inch
+    "scaley": 85000
 }
 
 
@@ -110,7 +125,7 @@ def hpgl_line(points):
             result.append(f"PD;")
         result.append(f"PA{point.x},{point.y};")
         n += 1
-    return "".join(result) + "\n"
+    return "".join(result)
 
 
 HPGL_MAPPING = {
@@ -118,8 +133,8 @@ HPGL_MAPPING = {
     "post": "PU;PA0,0;SP0;",
     "line": hpgl_line,
     "sep": ",",
-    "scalex":  7900,  # 1016 units per inch, max 7962 without offset
-    "scaley": 10300
+    "scalex": 10365,  # 1016 units per inch
+    "scaley":  7962
 }
 
 ITER_DEFAULT = 8
@@ -145,10 +160,12 @@ class LSystem(object):
         self.bound = Bound(0, 0, 1, 1)
         self.iter = iter or self.process.get("iter", ITER_DEFAULT)
         self.angle = self.process.get("a", ANGLE_DEFAULT)
+        self.scale = self.process.get("scale", 1.0)
         self.drawchars = draw or "ABF"
         self.movechars = move or "fG"
         self.lines = []     # array of lines
         self.line = []      # array of points
+        self.length = 1.0
 
     def run(self):
         self.state = "[]" + self.process["start"]
@@ -183,13 +200,19 @@ class LSystem(object):
             # Move there (start a new line)
             self.lines.append(self.line)
             self.line = [replace(self.point)]
+        elif action == ">":
+            # Grow the line length
+            self.length *= self.scale
+        elif action == "<":
+            # Shrink the line length
+            self.length /= self.scale
         elif action in self.drawchars:
             # move and draw
-            self.point.move()
+            self.point.move(self.length)
             self.line.append(replace(self.point))
         elif action in self.movechars:
             # move (start a new line)
-            self.point.move()
+            self.point.move(self.length)
             self.lines.append(self.line)
             self.line = [replace(self.point)]
         else:
@@ -202,16 +225,18 @@ class LSystem(object):
         for line in self.lines:
             for point in line:
                 self.update_bounds(point)
-        # Scale to the bounding box
+        # Scale and center to the bounding box
         xmul = self.mapping["scalex"] / (self.bound.x2 - self.bound.x1)
         ymul = self.mapping["scaley"] / (self.bound.y2 - self.bound.y1)
-        mult = min(xmul, ymul)
-        xoff = self.mapping["scalex"]/2 - mult * (self.bound.x2 + self.bound.x1)/2
-        yoff = self.mapping["scaley"]/2 - mult * (self.bound.y2 + self.bound.y1)/2
+        xmid = (self.bound.x2 + self.bound.x1)/2
+        ymid = (self.bound.y2 + self.bound.y1)/2
+        mult = min(xmul, ymul) * 0.88
+        xoff = self.mapping["scalex"]/2
+        yoff = self.mapping["scaley"]/2
 
         def scaled(pt):
-            x = int(pt.x * mult * 0.9) + xoff
-            y = int(pt.y * mult * 0.9) + yoff
+            x = int((pt.x - xmid) * mult + xoff)
+            y = int((pt.y - ymid) * mult + yoff)
             return Point(x, y, 0)
 
         # Draw the lines we made
@@ -228,7 +253,7 @@ class LSystem(object):
             self.bound.y1 = point.y
         if point.x > self.bound.x2:
             self.bound.x2 = point.x
-        if point.y > self.bound.x2:
+        if point.y > self.bound.y2:
             self.bound.y2 = point.y
 
 
