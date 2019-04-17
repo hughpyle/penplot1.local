@@ -22,6 +22,14 @@ To maybe implement later: (http://paulbourke.net/fractals/lsys/)
    &          Swap the meaning of + and -
    (          Decrement turning angle by turning angle increment
    )          Increment turning angle by turning angle increment
+   #          select the next pen color
+
+And maybe some 3d extensions, e.g.
+   ^          pitch up
+   &          pitch down
+   /          roll, like +
+   \\         roll, like -
+   *          roll 180, like |
 
 All other characters are allowed but do not render in the output.
 """
@@ -48,13 +56,32 @@ class Point:
     a: float
 
     def move(self):
-        return replace(self, x=self.x + math.cos(math.radians(self.a)), y=self.y + math.sin(math.radians(self.a)))
+        self.x += math.cos(math.radians(self.a))
+        self.y += math.sin(math.radians(self.a))
 
     def __add__(self, angle):
-        return replace(self, a=self.a + angle)
+        self.a += angle
+        return self
 
     def __sub__(self, angle):
-        return replace(self, a=self.a - angle)
+        self.a -= angle
+        return self
+
+
+def ps_line(points):
+    if len(points) <= 1:
+        # One point isn't enough for a line
+        return ""
+    result = ["newpath"]
+    first = True
+    for point in points:
+        if first:
+            result.append(f"{point.x} {point.y} moveto")
+        else:
+            result.append(f"{point.x} {point.y} lineto")
+        first = False
+    result.append("stroke")
+    return " ".join(result) + "\n"
 
 
 POSTSCRIPT_MAPPING = {
@@ -62,28 +89,37 @@ POSTSCRIPT_MAPPING = {
 /s 0.0072 def
 s s scale
 0.1 s div setlinewidth
-newpath
+0 setgray
 """,
-    "post": "0 setgray stroke showpage",
-    "dpre": "",
-    "dpost": " lineto\n",
-    "mpre": "",
-    "mpost": " moveto\n",
+    "post": "showpage\n",
+    "line": ps_line,
     "sep": " ",
-    "scale": 70000,  # 10000 units per inch
-    "offset": 5000
+    "scalex":  85000,  # 10000 units per inch
+    "scaley": 110000
 }
+
+
+def hpgl_line(points):
+    if len(points) <= 1:
+        # One point isn't enough for a line
+        return ""
+    result = ["PU;"]
+    n = 0
+    for point in points:
+        if n == 1:
+            result.append(f"PD;")
+        result.append(f"PA{point.x},{point.y};")
+        n += 1
+    return "".join(result) + "\n"
+
 
 HPGL_MAPPING = {
     "pre": "IN;IP;PU;SP1;LT;PA0,0;",
     "post": "PU;PA0,0;SP0;",
-    "dpre": "PD;PA",
-    "dpost": ";",
-    "mpre": "PU;PA",
-    "mpost": ";",
+    "line": hpgl_line,
     "sep": ",",
-    "scale": 7000,  # 1016 units per inch, max 7962 without offset
-    "offset": 250
+    "scalex":  7900,  # 1016 units per inch, max 7962 without offset
+    "scaley": 10300
 }
 
 ITER_DEFAULT = 8
@@ -100,18 +136,19 @@ class LSystem(object):
     and a string which is the LSystem expressed in JSON.
     """
 
-    def __init__(self, mapping, string, iter, draw, move):
+    def __init__(self, mapping, string, init, iter, draw, move):
         self.mapping = mapping
         self.process = json.loads(string)
         self.state = None
         self.stack = []
-        self.point = Point(0, 0, 0)
+        self.point = Point(0, 0, init)
         self.bound = Bound(0, 0, 1, 1)
         self.iter = iter or self.process.get("iter", ITER_DEFAULT)
         self.angle = self.process.get("a", ANGLE_DEFAULT)
-        self.moved = True
         self.drawchars = draw or "ABF"
         self.movechars = move or "fG"
+        self.lines = []     # array of lines
+        self.line = []      # array of points
 
     def run(self):
         self.state = "[]" + self.process["start"]
@@ -119,36 +156,15 @@ class LSystem(object):
             logging.debug(self.state)
             self.state = "".join([self.process["rules"].get(c, c) for c in self.state])
         logging.debug(self.state)
+        self.build()
         return self.render()
 
-    def render(self):
-        output = [self.mapping["pre"]]
+    def build(self):
+        # Make lines
         for c in self.state:
-            output.extend(self.act(c))
-        output.append(self.mapping["post"])
-        result = ""
-        XOFF = -self.bound.x1
-        YOFF = -self.bound.y1
-        XMULT = self.mapping["scale"] / (self.bound.x2 - self.bound.x1)
-        YMULT = self.mapping["scale"] / (self.bound.y2 - self.bound.y1)
-        mult = min(XMULT, YMULT)
-        off = self.mapping["offset"]
-        for r in output:
-            if isinstance(r, tuple):
-                result = result + f"{int((r[0]+XOFF)*mult+off)}{self.mapping['sep']}{int((r[1]+YOFF)*mult+off)}"
-            else:
-                result = result + r
-        return result
-
-    def update_bounds(self):
-        if self.point.x < self.bound.x1:
-            self.bound.x1 = self.point.x
-        if self.point.y < self.bound.y1:
-            self.bound.y1 = self.point.y
-        if self.point.x > self.bound.x2:
-            self.bound.x2 = self.point.x
-        if self.point.y > self.bound.x2:
-            self.bound.y2 = self.point.y
+            self.act(c)
+        self.lines.append(self.line)
+        self.line = []
 
     def act(self, action):
         result = []
@@ -157,54 +173,92 @@ class LSystem(object):
         elif action in ["-", chr(0x2212)]:
             self.point = self.point - self.angle
         elif action == "|":
-                self.point = self.point + 180
+            self.point = self.point + 180
         elif action == "[":
-            self.stack.append(self.point)
+            # Push point onto the stack
+            self.stack.append(replace(self.point))
         elif action == "]":
+            # Pop the stack and go back there
             self.point = self.stack.pop()
+            # Move there (start a new line)
+            self.lines.append(self.line)
+            self.line = [replace(self.point)]
         elif action in self.drawchars:
             # move and draw
-            if 1:  # self.moved:
-                result = [self.mapping["mpre"], (self.point.x, self.point.y), self.mapping["mpost"]]
-                self.update_bounds()
-            self.point = self.point.move()
-            self.update_bounds()
-            result.extend([self.mapping["dpre"], (self.point.x, self.point.y), self.mapping["dpost"]])
-            self.moved = False
+            self.point.move()
+            self.line.append(replace(self.point))
         elif action in self.movechars:
-            # move without drawing
-            self.point = self.point.move()
-            self.moved = True
-            result = [self.mapping["mpre"], (self.point.x, self.point.y), self.mapping["mpost"]]
+            # move (start a new line)
+            self.point.move()
+            self.lines.append(self.line)
+            self.line = [replace(self.point)]
         else:
             # Other characters have no effect on the state
             pass
         return result
 
+    def render(self):
+        # Find the bounding box of all the lines
+        for line in self.lines:
+            for point in line:
+                self.update_bounds(point)
+        # Scale to the bounding box
+        xmul = self.mapping["scalex"] / (self.bound.x2 - self.bound.x1)
+        ymul = self.mapping["scaley"] / (self.bound.y2 - self.bound.y1)
+        mult = min(xmul, ymul)
+        xoff = self.mapping["scalex"]/2 - mult * (self.bound.x2 + self.bound.x1)/2
+        yoff = self.mapping["scaley"]/2 - mult * (self.bound.y2 + self.bound.y1)/2
+
+        def scaled(pt):
+            x = int(pt.x * mult * 0.9) + xoff
+            y = int(pt.y * mult * 0.9) + yoff
+            return Point(x, y, 0)
+
+        # Draw the lines we made
+        output = [self.mapping["pre"]]
+        for line in self.lines:
+            output.append(self.mapping["line"]([scaled(point) for point in line]))
+        output.append(self.mapping["post"])
+        return "".join(output)
+
+    def update_bounds(self, point):
+        if point.x < self.bound.x1:
+            self.bound.x1 = point.x
+        if point.y < self.bound.y1:
+            self.bound.y1 = point.y
+        if point.x > self.bound.x2:
+            self.bound.x2 = point.x
+        if point.y > self.bound.x2:
+            self.bound.y2 = point.y
+
 
 @click.command()
 @click.argument("STRING")
 @click.option("--file", is_flag=True, help="Input is a filename not lsystem string")
-@click.option("--ps", is_flag=True, help="PostScript output")
-@click.option("--verbose", is_flag=True)
+@click.option("--ps", is_flag=True, help="PostScript output (default is HPGL)")
+@click.option("--verbose", is_flag=True, help="Print some debugging information")
 @click.option("--iter", default=None, type=int, help="Override the number of iterations")
-@click.option("--draw", default=DRAWCHARS, help="Alphabet that draw")
-@click.option("--move", default=MOVECHARS, help="Alphabet that move")
-def main(string, file, ps, verbose, iter, draw, move):
+@click.option("--draw", default=DRAWCHARS, help="Alphabet that draw (default is 'AF')")
+@click.option("--move", default=MOVECHARS, help="Alphabet that move (default is 'BGf')")
+@click.option("--init", default=0, help="Initial angle (degrees)")
+def main(string, file, ps, verbose, iter, draw, move, init):
     #
     # Take the string, e.g.
     # {"start":"F", "rules":{"F":"F-F++F-F"}, "a":60, "iter":1}
     # {"start":"FX","rules":{"F":"XF-","J":"++KXKKJ","K":"+","X":"[]++J+XFXF"},"a":72,"iter":4}
     #
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
+
+    # If it's a file, read string from the file
     if file:
         with open(string, "r") as stringfile:
             string = stringfile.read()
+
     if ps:
         mapper = POSTSCRIPT_MAPPING
     else:
         mapper = HPGL_MAPPING
-    print(LSystem(mapper, string, iter, draw, move).run())
+    print(LSystem(mapper, string, init, iter, draw, move).run())
 
 
 if __name__ == "__main__":
