@@ -3,7 +3,23 @@
 """
 L-system
 using the syntax of https://twitter.com/lsystembot
-(but to use their exact alphabet, use "--draw F", our default alphabet draws with A or F)
+(but to use their exact alphabet, use "--draw F --move f", our default alphabet draws with A or F)
+
+The "l" directory has a collection of models, they're JSON with
+{
+    "a": angle in degrees, default 90,
+    "iter": number of iterations, default 8
+    "start": the starting string or axiom, default F
+    "rules": {
+        "F": "whatever F expands to",
+        "y": "whatever y expands to" (etc. - as many rules as you want)
+    }
+    "draw": characters that move and draw, default AF
+    "move": characters that move without drawing, default BGf
+}
+
+Strings have special characters that are drawing transformations, below.
+All other characters are allowed but do not render in the output.
 
 Character  Meaning
    F, A       Move forward by line length drawing a line
@@ -31,9 +47,9 @@ And maybe some 3d extensions, e.g.
    \\         roll, like -
    *          roll 180, like |
 
-All other characters are allowed but do not render in the output.
 """
 
+import sys
 import json
 import math
 import logging
@@ -139,6 +155,7 @@ HPGL_MAPPING = {
 
 ITER_DEFAULT = 8
 ANGLE_DEFAULT = 90
+AXIOM_DEFAULT = "F"
 
 DRAWCHARS = "AF"
 MOVECHARS = "BGf"
@@ -151,9 +168,9 @@ class LSystem(object):
     and a string which is the LSystem expressed in JSON.
     """
 
-    def __init__(self, mapping, string, init, iter, draw, move):
+    def __init__(self, mapping, process, init, iter, draw, move, zoom):
         self.mapping = mapping
-        self.process = json.loads(string)
+        self.process = process
         self.state = None
         self.stack = []
         self.point = Point(0, 0, init)
@@ -161,14 +178,15 @@ class LSystem(object):
         self.iter = iter or self.process.get("iter", ITER_DEFAULT)
         self.angle = self.process.get("a", ANGLE_DEFAULT)
         self.scale = self.process.get("scale", 1.0)
-        self.drawchars = draw or "ABF"
-        self.movechars = move or "fG"
+        self.drawchars = draw or self.process.get("draw", DRAWCHARS)
+        self.movechars = move or self.process.get("move", MOVECHARS)
         self.lines = []     # array of lines
         self.line = []      # array of points
         self.length = 1.0
+        self.zoom = zoom
 
     def run(self):
-        self.state = "[]" + self.process["start"]
+        self.state = "[]" + self.process.get("start", AXIOM_DEFAULT)
         for _ in range(self.iter):
             logging.debug(self.state)
             self.state = "".join([self.process["rules"].get(c, c) for c in self.state])
@@ -230,7 +248,7 @@ class LSystem(object):
         ymul = self.mapping["scaley"] / (self.bound.y2 - self.bound.y1)
         xmid = (self.bound.x2 + self.bound.x1)/2
         ymid = (self.bound.y2 + self.bound.y1)/2
-        mult = min(xmul, ymul) * 0.88
+        mult = min(xmul, ymul) * self.zoom
         xoff = self.mapping["scalex"]/2
         yoff = self.mapping["scaley"]/2
 
@@ -263,10 +281,11 @@ class LSystem(object):
 @click.option("--ps", is_flag=True, help="PostScript output (default is HPGL)")
 @click.option("--verbose", is_flag=True, help="Print some debugging information")
 @click.option("--iter", default=None, type=int, help="Override the number of iterations")
-@click.option("--draw", default=DRAWCHARS, help="Alphabet that draw (default is 'AF')")
-@click.option("--move", default=MOVECHARS, help="Alphabet that move (default is 'BGf')")
+@click.option("--draw", default=None, help="Alphabet that draw (default is 'AF')")
+@click.option("--move", default=None, help="Alphabet that move (default is 'BGf')")
 @click.option("--init", default=0, help="Initial angle (degrees)")
-def main(string, file, ps, verbose, iter, draw, move, init):
+@click.option("--zoom", default=0.88, help="Zoom factor (1.0 to draw to the paper edge)")
+def main(string, file, ps, verbose, iter, draw, move, init, zoom):
     #
     # Take the string, e.g.
     # {"start":"F", "rules":{"F":"F-F++F-F"}, "a":60, "iter":1}
@@ -283,7 +302,13 @@ def main(string, file, ps, verbose, iter, draw, move, init):
         mapper = POSTSCRIPT_MAPPING
     else:
         mapper = HPGL_MAPPING
-    print(LSystem(mapper, string, init, iter, draw, move).run())
+
+    try:
+        process = json.loads(string)
+    except json.decoder.JSONDecodeError as ex:
+        sys.exit("Couldn't decode string '{}' as JSON: {}".format(string, ex))
+
+    print(LSystem(mapper, process, init, iter, draw, move, zoom).run())
 
 
 if __name__ == "__main__":

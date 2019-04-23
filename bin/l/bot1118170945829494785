@@ -1,1 +1,4 @@
-{"start":"SJF","rules":{"F":"FFE-","J":"FFSFJJL+","E":"[[]+BF+F]","B":"B+F[SF+F]S"},"a":351,"iter":7}
+{"start":"SJF","rules":{"F":"FFE-","J":"FFSFJJL+","E":"[[]+BF+F]","B":"B+F[SF+F]S"},"a":351,"iter":7,
+"draw": "F",
+"move": ""
+}
