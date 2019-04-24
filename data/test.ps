@@ -1,0 +1,22 @@
+%!PS
+% one-inch square for calibration
+1.0 setlinewidth
+0.0 setgray
+
+/square {
+newpath
+0 0 moveto
+0 72 lineto
+72 72 lineto
+72 0 lineto
+0 0 lineto closepath stroke
+} def
+
+% 1 inch from edges of letter-size paper (612x792)
+initmatrix 72 72 translate square
+[2] 0 setdash
+initmatrix 468 72 translate square
+initmatrix 72 648 translate square
+initmatrix 468 648 translate square
+[] 0 setdash
+showpage
