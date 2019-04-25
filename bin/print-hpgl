@@ -5,6 +5,7 @@
 # python -m ippserver --port 1631 run print-hpgl
 
 LOGFILE=print-hpgl.log
+date >> ${LOGFILE}
 
 # The output device is a Teensy, appears as /dev/ttyACM0
 DEVICE=/dev/ttyACM0
