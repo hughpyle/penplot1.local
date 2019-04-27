@@ -130,6 +130,39 @@ s s scale
 }
 
 
+def svg_line(points):
+    if len(points) <= 1:
+        # One point isn't enough for a line
+        return ""
+
+    result = ['<path style="fill:none;stroke:#000000;stroke-width:50"']
+    n = 0
+    for point in points:
+        if n==0:
+            result.append(f'd="M {point.x},{point.y}')
+        elif n==1:
+            result.append(f"L {point.x},{point.y}")
+        else:
+            result.append(f"{point.x},{point.y}")
+        n = n + 1
+    result.append('"/>')
+    return " ".join(result) + "\n"
+
+
+SVG_MAPPING = {
+    "pre": """<?xml version="1.0" encoding="utf-8"?>
+<svg width="792pt" height="612pt" version="1.1" xmlns="http://www.w3.org/2000/svg">
+<g transform="scale(0.01 0.01)">
+""",
+    "post": """</g>
+</svg>""",
+    "line": svg_line,
+    "sep": " ",
+    "scalex": 79200,
+    "scaley": 61200
+}
+
+
 def hpgl_line(points):
     if len(points) <= 1:
         # One point isn't enough for a line
@@ -139,8 +172,11 @@ def hpgl_line(points):
     for point in points:
         if n == 1:
             result.append(f"PD;")
-        result.append(f"PA{point.x},{point.y};")
+            result.append(f"PA{point.x},{point.y}")
+        else:
+            result.append(f",{point.x},{point.y}")
         n += 1
+    result.append(f";")
     return "".join(result)
 
 
@@ -279,13 +315,14 @@ class LSystem(object):
 @click.argument("STRING")
 @click.option("--file", is_flag=True, help="Input is a filename not lsystem string")
 @click.option("--ps", is_flag=True, help="PostScript output (default is HPGL)")
+@click.option("--svg", is_flag=True, help="SVG output")
 @click.option("--verbose", is_flag=True, help="Print some debugging information")
 @click.option("--iter", default=None, type=int, help="Override the number of iterations")
 @click.option("--draw", default=None, help="Alphabet that draw (default is 'AF')")
 @click.option("--move", default=None, help="Alphabet that move (default is 'BGf')")
 @click.option("--init", default=0, help="Initial angle (degrees)")
 @click.option("--zoom", default=0.88, help="Zoom factor (1.0 to draw to the paper edge)")
-def main(string, file, ps, verbose, iter, draw, move, init, zoom):
+def main(string, file, ps, svg, verbose, iter, draw, move, init, zoom):
     #
     # Take the string, e.g.
     # {"start":"F", "rules":{"F":"F-F++F-F"}, "a":60, "iter":1}
@@ -300,6 +337,8 @@ def main(string, file, ps, verbose, iter, draw, move, init, zoom):
 
     if ps:
         mapper = POSTSCRIPT_MAPPING
+    elif svg:
+        mapper = SVG_MAPPING
     else:
         mapper = HPGL_MAPPING
 
